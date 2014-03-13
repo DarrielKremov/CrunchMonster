@@ -1,3 +1,3 @@
 HEADERS += CalcException.h
 CONFIG += qt
-SOURCES += Calculator.cpp CalcException.cpp
+SOURCES += CrunchMonster.cpp CalcException.cpp
