@@ -1,0 +1,328 @@
+#include <iostream>
+#include <cmath>
+#include "CalcException.h"
+#include <QMap>
+#include <QString>
+#include <QTextStream>
+using namespace std;
+
+QMap<QString,double> variables;
+
+double eval_expression(QString& expr, qint32& pos);
+
+double eval_literal(QString& expr, qint32& pos)
+{
+	double result = 0.0;
+	bool negative = false;
+	bool frac = false;
+	qint32 frac_counter = 1;
+	QString function_buffer = "";
+	if (expr[pos] == '-')
+	{
+		negative = true;
+		pos++;
+	}
+	if (expr[pos] == 0)
+	{
+		throw new CalcException("Invalid input.");
+	}
+	while (expr[pos] != 0)
+	{
+		if (expr[pos] >= 0x30 && expr[pos] <= 0x39 && function_buffer == "")
+		{
+			if (!frac)
+			{
+				result *= 10;
+				result += (double)expr[pos].unicode() - 48;
+			}
+			else{
+				double digit_add = (double)expr[pos].unicode() - 48;
+				for (qint32 i = 0; i < frac_counter; i++)
+				{
+					digit_add /= 10;
+				}
+				frac_counter++;
+				result += digit_add;
+			}
+		}
+		else if ((expr[pos] >= 0x61 && expr[pos] <= 0x7a) || (function_buffer != "" && expr[pos] >= 0x30 && expr[pos] <= 0x39))
+		{
+			function_buffer += expr[pos];
+		}
+		else if (expr[pos] == '.')
+		{
+			frac = true;
+		}
+		else if (expr[pos] == '(')
+		{
+			result = eval_expression(expr,++pos);
+			if (function_buffer == "sin")
+			{
+				result = sin(result);
+			}
+			else if (function_buffer == "cos")
+			{
+				result = cos(result);
+			}
+			else if (function_buffer == "tan")
+			{
+				result = tan(result);
+			}
+			else if (function_buffer == "asin")
+			{
+				result = asin(result);
+			}
+			else if (function_buffer == "acos")
+			{
+				result = acos(result);
+			}
+			else if (function_buffer == "atan")
+			{
+				result = atan(result);
+			}
+			else if (function_buffer == "sinh")
+			{
+				result = sinh(result);
+			}
+			else if (function_buffer == "cosh")
+			{
+				result = cosh(result);
+			}
+			else if (function_buffer == "tanh")
+			{
+				result = tanh(result);
+			}
+			else if (function_buffer == "asinh")
+			{
+				result = asinh(result);
+			}
+			else if (function_buffer == "acosh")
+			{
+				result = acosh(result);
+			}
+			else if (function_buffer == "atanh")
+			{
+				result = atanh(result);
+			}
+			else if (function_buffer == "sqrt")
+			{
+				result = sqrt(result);
+			}
+			else if (function_buffer == "cbrt")
+			{
+				result = cbrt(result);
+			}
+			else if (function_buffer == "abs")
+			{
+				result = abs(result);
+			}
+			else if (function_buffer == "ceil")
+			{
+				result = ceil(result);
+			}
+			else if (function_buffer == "floor")
+			{
+				result = floor(result);
+			}
+			else if (function_buffer == "round")
+			{
+				result = round(result);
+			}
+			else if (function_buffer == "ln")
+			{
+				result = log(result);
+			}
+			else if (function_buffer == "log")
+			{
+				result = log10(result);
+			}
+			else if (function_buffer == "log2")
+			{
+				result = log2(result);
+			}
+			else if (function_buffer != "")
+			{
+				throw new CalcException("Unknown function \"" + function_buffer + ".\"");
+			}
+			function_buffer += '(';
+		}
+		else{
+			break;
+		}
+		pos++;
+	}
+	if (function_buffer != "" && function_buffer[function_buffer.length()-1] != '(')
+	{
+		if (variables.find(function_buffer) != variables.end())
+		{
+			result = variables[function_buffer];
+		}
+		else{
+			throw new CalcException("Unknown variable \"" + function_buffer + ".\"");
+		}
+	}
+	if (negative)
+	{
+		result = -result;
+	}
+	return result;
+}
+
+double eval_exponential(QString& expr, qint32& pos)
+{
+	double result = eval_literal(expr,pos);
+	while (expr[pos] != 0)
+	{
+		if (expr[pos] != '^')
+		{
+			return result;
+		}
+		if (expr[pos] == '^')
+		{
+			double exponent = eval_literal(expr,++pos);
+			result = pow(result,exponent);
+		}
+	}
+	return result;
+}
+
+double eval_term(QString& expr, qint32& pos)
+{
+	double result = eval_exponential(expr,pos);
+	while (expr[pos] != 0)
+	{
+		if (expr[pos] != '*' && expr[pos] != '/' && expr[pos] != '%')
+		{
+			return result;
+		}
+		if (expr[pos] == '*')
+		{
+			result *= eval_exponential(expr,++pos);
+			pos--;
+		}
+		else if (expr[pos] == '/')
+		{
+			double factor = eval_exponential(expr,++pos);
+			if (factor != 0.0)
+			{
+				result /= factor;
+				pos--;
+			}
+			else{
+				throw new CalcException("Attempt at division by zero.");
+			}
+		}
+		else if (expr[pos] == '%')
+		{
+			double factor = eval_exponential(expr,++pos);
+			if (factor == floor(factor) && result == floor(result))
+			{
+				if (factor != 0.0)
+				{
+					result = (int)result % (int)factor;
+					pos--;
+				}
+				else{
+					throw new CalcException("Attempt at division by zero.");
+				}
+			}
+			else{
+				throw new CalcException("Modulus on decimals is impossible.");
+			}
+		}
+		pos++;
+	}
+	return result;
+}
+
+double eval_expression(QString& expr, qint32& pos)
+{
+	double result = eval_term(expr,pos);
+	while (expr[pos] != 0)
+	{
+		if (expr[pos] == ')')
+		{
+			return result;
+		}
+		if (expr[pos] == '+')
+		{
+			result += eval_term(expr, ++pos);
+			pos--;
+		}
+		else if (expr[pos] == '-')
+		{
+			result -= eval_term(expr, ++pos);
+			pos--;
+		}
+		else{
+			throw new CalcException("Invalid expression.");
+		}
+		pos++;
+	}
+	return result;
+}
+
+QString eval_variable(QString& expr, qint32& pos)
+{
+	QString var_name = "";
+	while (expr[pos] != '=')
+	{
+		if (var_name == "")
+		{
+			if (expr[pos] >= 0x61 && expr[pos] <= 0x7a)
+			{
+				var_name += expr[pos];
+			}
+			else{
+				throw new CalcException("Variables must start with a lowercase letter.");
+			}
+		}
+		else{
+			if ((expr[pos] >= 0x61 && expr[pos] <= 0x7a) || (expr[pos] >= 0x30 && expr[pos] <= 0x39))
+			{
+				var_name += expr[pos];
+			}
+			else{
+				throw new CalcException("Variables can only contain lowercase letters and numbers.");
+			}
+		}
+		pos++;
+	}
+	return var_name;
+}
+
+int main()
+{
+	variables.insert("e",M_E);
+	variables.insert("pi",M_PI);
+	QTextStream std_in(stdin);
+	QString command = "";
+	qint32 start_pos = 0;
+	while (command != "exit" && command != "quit")
+	{
+		if (command.contains("="))
+		{
+			QString var_name = eval_variable(command,start_pos);
+			variables.insert(var_name,eval_expression(command,++start_pos));
+			start_pos = 0;
+		}
+		else if (command != "")
+		{
+			try{
+				double result = eval_expression(command,start_pos);
+				cout << result << endl;
+				variables.insert("ans",result);
+			}
+			catch (CalcException* ce)
+			{
+				cout << ce->get_message().toStdString() << endl;
+				delete ce;
+			}
+			start_pos = 0;
+		}
+		cout << "> ";
+		command = std_in.readLine();
+		command.replace(" ","");
+	}
+	return 0;
+}

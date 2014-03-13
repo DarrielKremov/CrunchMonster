@@ -1,0 +1,18 @@
+For those moments you need a simple, intuitive scientific calculator for the command-line without the complexity of bc. To compile (assuming you have the Qt libraries, qmake, g++, and make):
+
+> qmake
+> make
+
+CrunchMonster uses simple, intuitive operators and commands. Operators include the standard +,-,*, and /. It also features modulus (%) and power (^). Included constants are e and π (referenced to as "pi" in the program). Functions include almost all of the math functions available in the STL cmath. CrunchMonster also supports variables, which can be referenced anywhere inside an expression. The last result is stored in the variable "ans."
+
+Examples of proper usage:
+
+> 5+7*6
+> 5^2 + pi
+> sin(pi)
+> e^pi + cos(4)
+> variable = 5.6
+
+CrunchMonster uses recursive-descent parsing to read and compute the expression. The next version will feature support for other number bases and (Lord willing) complex numbers.
+
+To report any bugs, just create a new issue here on the GitHub repo.
