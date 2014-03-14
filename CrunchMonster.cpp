@@ -327,7 +327,8 @@ int main()
 {
 	constants.insert("e",M_E);
 	constants.insert("pi",M_PI);
-	QTextStream std_in(stdin);
+	QTextStream std_in(stdin,QIODevice::ReadOnly);
+	QTextStream std_out(stdout,QIODevice::WriteOnly);
 	QString command = "";
 	qint32 start_pos = 0;
 	radians = true;
@@ -342,41 +343,48 @@ int main()
 					variables.insert(var_name,eval_expression(command,++start_pos));
 				}
 				else{
-					cout << "Can't use the name of a constant for a variable name.\n";
+					std_out << "Can't use the name of a constant for a variable name.\n";
+					std_out.flush();
 				}
 				start_pos = 0;
 			}
 			catch (CalcException* ce)
 			{
-				cout << ce->get_message().toStdString() << endl;
+				std_out << ce->get_message() << endl;
+				std_out.flush();
 				delete ce;
 			}
 		}
 		else if (command == "degrees")
 		{
 			radians = false;
-			cout << "Degree mode activated.\n";
+			std_out << "Degree mode activated.\n";
+			std_out.flush();
 		}
 		else if (command == "radians")
 		{
 			radians = true;
-			cout << "Radian mode activated.\n";
+			std_out << "Radian mode activated.\n";
+			std_out.flush();
 		}
 		else if (command != "")
 		{
 			try{
 				double result = eval_expression(command,start_pos);
-				cout << result << endl;
+				std_out << result << endl;
+				std_out.flush();
 				variables.insert("ans",result);
 			}
 			catch (CalcException* ce)
 			{
-				cout << ce->get_message().toStdString() << endl;
+				std_out << ce->get_message() << endl;
+				std_out.flush();
 				delete ce;
 			}
 			start_pos = 0;
 		}
-		cout << "> ";
+		std_out << "> ";
+		std_out.flush();
 		command = std_in.readLine();
 		command.replace(" ","");
 	}
