@@ -7,6 +7,7 @@
 using namespace std;
 
 QMap<QString,double> variables;
+QMap<QString,double> constants;
 
 double eval_expression(QString& expr, qint32& pos);
 
@@ -157,6 +158,10 @@ double eval_literal(QString& expr, qint32& pos)
 		{
 			result = variables[function_buffer];
 		}
+		else if (constants.find(function_buffer) != constants.end())
+		{
+			result = constants[function_buffer];
+		}
 		else{
 			throw new CalcException("Unknown variable \"" + function_buffer + ".\"");
 		}
@@ -293,8 +298,8 @@ QString eval_variable(QString& expr, qint32& pos)
 
 int main()
 {
-	variables.insert("e",M_E);
-	variables.insert("pi",M_PI);
+	constants.insert("e",M_E);
+	constants.insert("pi",M_PI);
 	QTextStream std_in(stdin);
 	QString command = "";
 	qint32 start_pos = 0;
@@ -303,7 +308,13 @@ int main()
 		if (command.contains("="))
 		{
 			QString var_name = eval_variable(command,start_pos);
-			variables.insert(var_name,eval_expression(command,++start_pos));
+			if (constants.find(var_name) == constants.end())
+			{
+				variables.insert(var_name,eval_expression(command,++start_pos));
+			}
+			else{
+				cout << "Can't use the name of a constant for a variable name.\n";
+			}
 			start_pos = 0;
 		}
 		else if (command != "")
