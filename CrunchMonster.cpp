@@ -8,6 +8,7 @@ using namespace std;
 
 QMap<QString,double> variables;
 QMap<QString,double> constants;
+bool radians;
 
 double eval_expression(QString& expr, qint32& pos);
 
@@ -59,27 +60,51 @@ double eval_literal(QString& expr, qint32& pos)
 			result = eval_expression(expr,++pos);
 			if (function_buffer == "sin")
 			{
+				if (!radians)
+				{
+					result *= M_PI/180;
+				}
 				result = sin(result);
 			}
 			else if (function_buffer == "cos")
 			{
+				if (!radians)
+				{
+					result *= M_PI/180;
+				}
 				result = cos(result);
 			}
 			else if (function_buffer == "tan")
 			{
+				if (!radians)
+				{
+					result *= M_PI/180;
+				}
 				result = tan(result);
 			}
 			else if (function_buffer == "asin")
 			{
 				result = asin(result);
+				if (!radians)
+				{
+					result *= M_PI/180;
+				}
 			}
 			else if (function_buffer == "acos")
 			{
 				result = acos(result);
+				if (!radians)
+				{
+					result *= M_PI/180;
+				}
 			}
 			else if (function_buffer == "atan")
 			{
 				result = atan(result);
+				if (!radians)
+				{
+					result *= M_PI/180;
+				}
 			}
 			else if (function_buffer == "sinh")
 			{
@@ -303,6 +328,7 @@ int main()
 	QTextStream std_in(stdin);
 	QString command = "";
 	qint32 start_pos = 0;
+	radians = true;
 	while (command != "exit" && command != "quit")
 	{
 		if (command.contains("="))
@@ -316,6 +342,16 @@ int main()
 				cout << "Can't use the name of a constant for a variable name.\n";
 			}
 			start_pos = 0;
+		}
+		else if (command == "degrees")
+		{
+			radians = false;
+			cout << "Degree mode activated.\n";
+		}
+		else if (command == "radians")
+		{
+			radians = true;
+			cout << "Radian mode activated.\n";
 		}
 		else if (command != "")
 		{
