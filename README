@@ -15,4 +15,12 @@ Examples of proper usage:
 
 CrunchMonster uses recursive-descent parsing to read and compute the expression. The next version will feature support for other number bases and (Lord willing) complex numbers.
 
+To exit the program, type:
+
+> quit
+
+or
+
+> exit
+
 To report any bugs, just create a new issue here on the GitHub repo.
