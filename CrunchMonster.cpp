@@ -17,6 +17,7 @@ double eval_literal(QString& expr, qint32& pos)
 	double result = 0.0;
 	bool negative = false;
 	bool frac = false;
+	bool literal_is_num = false;
 	qint32 frac_counter = 1;
 	QString function_buffer = "";
 	if (expr[pos] == '-')
@@ -32,6 +33,7 @@ double eval_literal(QString& expr, qint32& pos)
 	{
 		if (expr[pos] >= 0x30 && expr[pos] <= 0x39 && function_buffer == "")
 		{
+			literal_is_num = true;
 			if (!frac)
 			{
 				result *= 10;
@@ -47,7 +49,7 @@ double eval_literal(QString& expr, qint32& pos)
 				result += digit_add;
 			}
 		}
-		else if ((expr[pos] >= 0x61 && expr[pos] <= 0x7a) || (function_buffer != "" && expr[pos] >= 0x30 && expr[pos] <= 0x39))
+		else if (!literal_is_num && ((expr[pos] >= 0x61 && expr[pos] <= 0x7a) || (expr[pos] >= 0x41 && expr[pos] <= 0x5a) || (function_buffer != "" && expr[pos] >= 0x30 && expr[pos] <= 0x39)))
 		{
 			function_buffer += expr[pos];
 		}
@@ -299,21 +301,21 @@ QString eval_variable(QString& expr, qint32& pos)
 	{
 		if (var_name == "")
 		{
-			if (expr[pos] >= 0x61 && expr[pos] <= 0x7a)
+			if ((expr[pos] >= 0x61 && expr[pos] <= 0x7a) || (expr[pos] >= 0x41 && expr[pos] <= 0x5a))
 			{
 				var_name += expr[pos];
 			}
 			else{
-				throw new CalcException("Variables must start with a lowercase letter.");
+				throw new CalcException("Variables must start with a letter.");
 			}
 		}
 		else{
-			if ((expr[pos] >= 0x61 && expr[pos] <= 0x7a) || (expr[pos] >= 0x30 && expr[pos] <= 0x39))
+			if ((expr[pos] >= 0x61 && expr[pos] <= 0x7a) || (expr[pos] >= 0x30 && expr[pos] <= 0x39) || (expr[pos] >= 0x41 && expr[pos] <= 0x5a))
 			{
 				var_name += expr[pos];
 			}
 			else{
-				throw new CalcException("Variables can only contain lowercase letters and numbers.");
+				throw new CalcException("Variables can only contain letters and numbers.");
 			}
 		}
 		pos++;
@@ -333,15 +335,22 @@ int main()
 	{
 		if (command.contains("="))
 		{
-			QString var_name = eval_variable(command,start_pos);
-			if (constants.find(var_name) == constants.end())
+			try{
+				QString var_name = eval_variable(command,start_pos);
+				if (constants.find(var_name) == constants.end())
+				{
+					variables.insert(var_name,eval_expression(command,++start_pos));
+				}
+				else{
+					cout << "Can't use the name of a constant for a variable name.\n";
+				}
+				start_pos = 0;
+			}
+			catch (CalcException* ce)
 			{
-				variables.insert(var_name,eval_expression(command,++start_pos));
+				cout << ce->get_message().toStdString() << endl;
+				delete ce;
 			}
-			else{
-				cout << "Can't use the name of a constant for a variable name.\n";
-			}
-			start_pos = 0;
 		}
 		else if (command == "degrees")
 		{
